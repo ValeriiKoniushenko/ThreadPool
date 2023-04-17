@@ -17,8 +17,8 @@
     <ClCompile Include="D:\LibsUtils\googletest\googletest\src\gtest-all.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Constructing.cpp">
-      <Filter>Tests</Filter>
+    <ClCompile Include="Tests\Constructing.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

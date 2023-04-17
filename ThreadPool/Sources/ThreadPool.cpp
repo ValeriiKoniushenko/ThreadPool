@@ -67,7 +67,7 @@ std::vector<ThreadPool::Error> ThreadPool::GetErrors() const
 	return Errors;
 }
 
-const std::map<std::thread::id, ThreadPool::ThreadInfo>& ThreadPool::GetRegisteredThreads()
+const ThreadPool::RegisteredThreadsT& ThreadPool::GetRegisteredThreads()
 {
 	std::lock_guard LG(Mutex);
 	return RegisteredThreads;

@@ -52,6 +52,8 @@ public:
 		mutable std::shared_mutex Mutex;
 	};
 	
+	using RegisteredThreadsT = std::map<std::thread::id, ThreadInfo>;
+	
 	explicit ThreadPool(std::size_t ThreadsCount = 0);
 	~ThreadPool();
 	ThreadPool(const ThreadPool&) = delete;
@@ -60,7 +62,7 @@ public:
 	ThreadPool& operator=(ThreadPool&&) = delete;
 	
 	std::vector<Error> GetErrors() const;
-	_NODISCARD const std::map<std::thread::id, ThreadInfo>& GetRegisteredThreads();
+	_NODISCARD const RegisteredThreadsT& GetRegisteredThreads();
 	void Stop();
 	
 protected:
@@ -78,7 +80,7 @@ private:
 	std::vector<std::thread> Threads;
 	std::vector<Error> Errors;
 	bool bIsRun = true;
-	std::map<std::thread::id, ThreadInfo> RegisteredThreads;
+	RegisteredThreadsT RegisteredThreads;
 	mutable std::mutex Mutex; // TODO: change to std::shared_mutex
 };
 
