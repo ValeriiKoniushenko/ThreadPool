@@ -6,8 +6,10 @@
 	#include <source_location>
 #endif	  // __cpp_lib_source_location
 
+#include <future>
 #include <map>
 #include <mutex>
+#include <queue>
 #include <shared_mutex>
 #include <sstream>
 #include <string>
@@ -51,6 +53,26 @@ public:
 		ThreadStatus Status = ThreadStatus::Stopped;
 		mutable std::shared_mutex Mutex;
 	};
+
+	class TaskPool
+	{
+	public:
+		TaskPool() = default;
+		~TaskPool() = default;
+		TaskPool(const TaskPool&) = delete;
+		TaskPool(TaskPool&&) = delete;
+		TaskPool& operator=(const TaskPool&) = delete;
+		TaskPool& operator=(TaskPool&&) = delete;
+		
+		using FunctionT = std::function<void()>;
+		
+		_NODISCARD FunctionT Pop();
+		void Push(FunctionT Task);
+		
+	private:
+		std::queue<FunctionT> Tasks;
+		mutable std::shared_mutex Mutex;
+	};
 	
 	using RegisteredThreadsT = std::map<std::thread::id, ThreadInfo>;
 	
@@ -62,8 +84,14 @@ public:
 	ThreadPool& operator=(ThreadPool&&) = delete;
 	
 	std::vector<Error> GetErrors() const;
+
 	_NODISCARD const RegisteredThreadsT& GetRegisteredThreads();
+
 	void Stop();
+
+	_NODISCARD std::size_t GetThreadsCount() const;
+
+	std::future<int> Submit(std::function<int()> Task);
 	
 protected:
 
@@ -77,6 +105,7 @@ private:
 	void AllocateThreads();
 
 private:
+	TaskPool Tasks;
 	std::vector<std::thread> Threads;
 	std::vector<Error> Errors;
 	bool bIsRun = true;

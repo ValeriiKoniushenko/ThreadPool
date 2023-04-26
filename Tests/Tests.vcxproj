@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClCompile Include="D:\LibsUtils\googletest\googletest\src\gtest-all.cc" />
     <ClCompile Include="D:\LibsUtils\googletest\googletest\src\gtest_main.cc" />
+    <ClCompile Include="Tests\AddingTasks.cpp" />
     <ClCompile Include="Tests\Constructing.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>

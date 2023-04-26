@@ -1,5 +1,7 @@
 #include "ThreadPool.h"
 
+#include <future>
+
 ThreadPool::ThreadInfo::ThreadInfo(std::thread::id ID, ThreadStatus Status) : ID(ID), Status(Status)
 {
 }
@@ -27,6 +29,25 @@ ThreadPool::ThreadInfo::ThreadStatus ThreadPool::ThreadInfo::GetStatus() const
 {
 	std::shared_lock LG(Mutex);
 	return Status;
+}
+
+ThreadPool::TaskPool::FunctionT ThreadPool::TaskPool::Pop()
+{
+	std::lock_guard LG(Mutex);
+	if (!Tasks.empty())
+	{
+		FunctionT Task = Tasks.front();
+		Tasks.pop();
+		return Task;
+	}
+
+	return {};
+}
+
+void ThreadPool::TaskPool::Push(FunctionT Task)
+{
+	std::lock_guard LG(Mutex);
+	Tasks.push(Task);
 }
 
 std::thread::id ThreadPool::ThreadInfo::GetID() const
@@ -80,47 +101,62 @@ void ThreadPool::Stop()
 		bIsRun = false;
 	}
 
-	for (const auto& Thread : RegisteredThreads)
+	for (auto& Thread : Threads)
 	{
-		while (Thread.second.GetStatus() == ThreadInfo::ThreadStatus::Running);
+		if (!Thread.joinable())
+		{
+			PushError("Can't join a thread");
+		}
+		else
+		{
+			Thread.join();
+			auto Key = RegisteredThreads.find(Thread.get_id());
+			if (Key != RegisteredThreads.end())
+			{
+				Key->second.SetStatus(ThreadInfo::ThreadStatus::Stopped);
+			}
+		}
 	}
+}
+
+std::size_t ThreadPool::GetThreadsCount() const
+{
+	return RegisteredThreads.size();
+}
+
+std::future<int> ThreadPool::Submit(std::function<int()> Task)
+{
+	std::shared_ptr<std::promise<int>> Promise = std::make_shared<std::promise<int>>();
+	Tasks.Push([Promise, Task]()
+	{
+		Promise->set_value(Task());
+	});
+	return Promise->get_future(); 
 }
 
 void ThreadPool::AllocateThreads()
 {
 	auto LocalThreadMain = [this]()
 	{
-		{
-			std::lock_guard<std::mutex> LG(Mutex);
-			RegisteredThreads.emplace(
-				std::this_thread::get_id(),
-				ThreadInfo(std::this_thread::get_id(), ThreadInfo::ThreadStatus::Running)
-			);
-		}
-
 		Mutex.lock();
 		while (bIsRun)
 		{
 			Mutex.unlock();
 
+			TaskPool::FunctionT Task = Tasks.Pop();
+			if (Task)
+			{
+				Task();
+			}
 			
 			Mutex.lock();
 		}
 		Mutex.unlock();
-
-		{
-			std::lock_guard LG(Mutex);
-			auto Key = RegisteredThreads.find(std::this_thread::get_id());
-			if (Key != RegisteredThreads.end())
-			{
-				Key->second.SetStatus(ThreadInfo::ThreadStatus::Stopped);
-			}
-		}
 	};
 
 	for (std::thread& Thread : Threads)
 	{
-		Thread = std::move(std::thread(LocalThreadMain));
-		Thread.detach();
+		Thread = std::thread(LocalThreadMain);
+		RegisteredThreads.emplace(Thread.get_id(), ThreadInfo(Thread.get_id(), ThreadInfo::ThreadStatus::Running));
 	}
 }

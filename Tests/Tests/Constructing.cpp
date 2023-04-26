@@ -16,9 +16,9 @@ namespace
 
 TEST(Constructing, SuccessfullConstructing)
 {
-    ThreadPool ThreadPool_;
+    const ThreadPool ThreadPool_;
 
-    WorkEmulation();
+    // WorkEmulation();
 
     EXPECT_EQ(0, ThreadPool_.GetErrors().size());
 }
@@ -30,10 +30,11 @@ TEST(Constructing, SuccessfullConstructingWithSomeCountOfThreadIDs)
     WorkEmulation();
     
     EXPECT_EQ(ThreadPool_.GetRegisteredThreads().size(), std::thread::hardware_concurrency());
+    EXPECT_EQ(ThreadPool_.GetThreadsCount(), std::thread::hardware_concurrency());
     EXPECT_EQ(0, ThreadPool_.GetErrors().size());
 }
 
-TEST(Constructing, SuccessfullConstructingWithSome5OfThreadIDs)
+TEST(Constructing, SuccessfullConstructingWith5ThreadIDs)
 {
     constexpr std::size_t ThreadsCount = 5;
     ThreadPool ThreadPool_(ThreadsCount);
@@ -41,5 +42,6 @@ TEST(Constructing, SuccessfullConstructingWithSome5OfThreadIDs)
     WorkEmulation();
     
     EXPECT_EQ(ThreadPool_.GetRegisteredThreads().size(), ThreadsCount);
+    EXPECT_EQ(ThreadPool_.GetThreadsCount(), ThreadsCount);
     EXPECT_EQ(0, ThreadPool_.GetErrors().size());
 }
